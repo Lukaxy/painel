@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mural de aviso!</title>
+    <link rel="stylesheet" href="css/style.css">   
+    <script src="js/script.js" defer> </script>
+    <link rel="icon" href="img/IVR.png" type="image/x-icon">
+</head>
+<body>
+
+    <div id="login-view">
+        <div class="login-box-new">
+            <p class="welcome-text">Seja Bem-Vindo(a) IVRTV</p>
+            <h1 class="brand-logo">Ivr<span>net</span></h1>
+            
+            <div id="login-msg"></div>
+            
+            <div class="login-input-group">
+                <label for="login-user">E-mail</label>
+                <input type="text" id="login-user" class="form-control-login" placeholder="usuario@ivrnet.com.br" required>
+            </div>
+            
+            <div class="login-input-group">
+                <label for="login-pass">Senha</label>
+                <input type="password" id="login-pass" class="form-control-login" placeholder="••••••••" required>
+            </div>
+
+            <div class="login-options">
+                <input type="checkbox" id="remember-me">
+                <label for="remember-me" style="margin:0; cursor:pointer;">Lembrar de mim</label>
+            </div>
+            
+            <button id="btn-login" class="btn-login-new">Entrar</button>
+            <button id="btn-register" class="btn-link-register">Solicitar Acesso</button>
+        </div>
+    </div>
+
+    <div id="app-view">
+        <main class="container">
+            
+            <div class="header-banner-wrapper">
+                <header class="header-layout">
+                    <div class="header-left">
+                        <img src="img/IVR.png" alt="Logo IVR" class="header-logo">
+                        <div class="subtitle">Painel de Prazos</div>
+                        <h1>Prazo de abertura de O.S. por cidade</h1>
+                    </div>
+                    
+                    <div class="header-right">
+                        <div class="clock-container">
+                            <div id="live-time" class="clock-time">00:00:00</div>
+                            <div id="live-date" class="clock-date">Carregando data...</div>
+                        </div>
+                        <div class="header-desc-text">
+                            Janela de atendimento vigente em cada praça,<br>atualizada pelo time de operações.
+                        </div>
+                    </div>
+                </header>
+
+                <section class="top-bar">
+                    <div class="search-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="search-input" class="search-input" placeholder="Pesquisar cidade ou estado..." aria-label="Pesquisar cidade">
+                    </div>
+                    <div class="action-buttons">
+                        <button id="btn-theme-toggle" class="btn btn-theme-toggle" title="Alternar Tema">☀️</button>
+                        <button id="btn-toggle-editor" class="btn btn-primary">🛠️ Modo Editor</button>
+                        <button id="btn-profile" class="btn btn-secondary" style="gap: 8px;">
+                            <img id="topbar-avatar" class="topbar-avatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2362727d'><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/></svg>" alt="">
+                            Meu Perfil
+                        </button> 
+                        <button id="btn-logout" class="btn btn-danger-outline">🚪 Sair</button>                
+                    </div>
+                </section>
+            </div>
+
+            <section id="admin-panel" class="admin-panel">
+                <div class="panel-sections-wrapper">
+                    
+                    <div>
+                        <h2 class="panel-title" id="panel-title">➕ Adicionar Nova Cidade</h2>
+                        <form id="city-form" class="admin-form">
+                            <input type="hidden" id="edit-index" value="">
+                            
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 3;">
+                                    <label for="input-city-name">Nome da Cidade</label>
+                                    <input type="text" id="input-city-name" class="form-control" placeholder="Ex: Campo Grande" required style="margin-bottom: 0;">
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="input-city-uf">UF</label>
+                                    <input type="text" id="input-city-uf" class="form-control" placeholder="Ex: MS" maxlength="2" required style="margin-bottom: 0;">
+                                </div>
+                            </div>
+
+                            <p style="font-size: 0.78rem; color: var(--text-muted); margin: -6px 0 4px;">🌤️/🌙 O clima é buscado automaticamente para a cidade — não é necessário informar.</p>
+
+                            <div class="form-group">
+                                <label for="select-deadline">Prazo Previsto</label>
+                                <select id="select-deadline" class="form-control" required style="margin-bottom: 0;">
+                                    <option value="livre">Sem Restrição</option>
+                                    <option value="manha">Somente Manhã</option>
+                                    <option value="tarde">Somente à Tarde</option>
+                                    <option value="24h">24 Horas</option>
+                                    <option value="48h">48 Horas</option>
+                                </select>
+                            </div>
+
+                            <div style="display: flex; gap: 10px; margin-top: 8px;">
+                                <button type="submit" id="btn-submit-form" class="btn btn-primary" style="flex: 1; width: 100%;">Adicionar Cidade</button>
+                                <button type="button" id="btn-cancel-edit" class="btn btn-secondary" style="display: none; width: auto;">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div>
+                        <h2 class="panel-title" id="alert-panel-title">➕ Publicar Novo Aviso</h2>
+                        <form id="alert-form" class="admin-form">
+                            <input type="hidden" id="alert-edit-index" value="">
+                            
+                            <div class="form-group">
+                                <label for="input-alert-title">Título do Aviso</label>
+                                <input type="text" id="input-alert-title" class="form-control" placeholder="Ex: Manutenção de Fibra" required style="margin-bottom: 0;">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="input-alert-text">Descrição</label>
+                                <textarea id="input-alert-text" class="form-control" rows="3" placeholder="Ex: Rompimento afetando clientes..." required style="resize: none; margin-bottom: 0;"></textarea>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="select-alert-color">Nível / Cor do Alerta</label>
+                                    <select id="select-alert-color" class="form-control" required style="margin-bottom: 0;">
+                                        <option value="blue">🔵 Azul (Informativo / OK)</option>
+                                        <option value="green">🟢 Verde (Normalizado)</option>
+                                        <option value="yellow" selected>🟡 Amarelo (Atenção / Alerta)</option>
+                                        <option value="red">🔴 Vermelho (Crítico / Perigo)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="select-alert-duration">Duração do Aviso</label>
+                                    <select id="select-alert-duration" class="form-control" required style="margin-bottom: 0;">
+                                        <option value="1">1 Hora</option>
+                                        <option value="2">2 Horas</option>
+                                        <option value="4">4 Horas</option>
+                                        <option value="8">8 Horas</option>
+                                        <option value="12">12 Horas</option>
+                                        <option value="24" selected>24 Horas</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 10px; margin-top: 8px;">
+                                <button type="submit" id="btn-submit-alert" class="btn btn-primary" style="flex: 1; width: 100%;">Adicionar Aviso</button>
+                                <button type="button" id="btn-cancel-alert-edit" class="btn btn-secondary" style="display: none; width: auto;">Cancelar</button>
+                            </div>
+                        </form>
+
+                        <div style="margin-top: 30px; border-top: 1px solid var(--border-input); padding-top: 20px;">
+                            <h2 class="panel-title">👥 Gerenciar Acessos</h2>
+                            
+                            <h3 style="font-size: 0.95rem; margin-top: 10px; color: var(--status-yellow);">Aguardando Aprovação</h3>
+                            <div id="pending-users-list" class="user-approval-list">
+                                <p style="font-size: 0.85rem; color: var(--text-muted);">Nenhum usuário aguardando aprovação.</p>
+                            </div>
+
+                            <h3 style="font-size: 0.95rem; margin-top: 20px; color: var(--primary-light);">Usuários Ativos</h3>
+                            <div id="active-users-list" class="user-approval-list">
+                                <p style="font-size: 0.85rem; color: var(--text-muted);">Nenhum usuário ativo.</p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </section>
+
+            <div class="cidades-banner">
+                <span class="cidades-banner-icon">🏙️</span>
+                <h2 class="cidades-banner-text">Cidades para atendimento</h2>
+                <span class="cidades-banner-icon">🏙️</span>
+            </div>
+
+            <section class="cities-frame">
+                <div class="cities-grid" id="cities-container"></div>
+            </section>
+
+            <section class="legend-container">
+                <div class="legend-item"><span class="legend-dot" style="color: var(--status-green); background-color: var(--status-green);"></span> Sem Restrição</div>
+                <div class="legend-item"><span class="legend-dot" style="color: var(--status-yellow); background-color: var(--status-yellow);"></span> Somente Manhã / Tarde</div>
+                <div class="legend-item"><span class="legend-dot" style="color: var(--status-orange); background-color: var(--status-orange);"></span> 24 Horas</div>
+                <div class="legend-item"><span class="legend-dot" style="color: var(--status-red); background-color: var(--status-red);"></span> 48 Horas</div>
+            </section>
+
+            <section id="alerts-panel" class="alerts-panel" style="display: none;">
+                <h2 class="alerts-header">
+                    <svg class="megaphone-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M2.25 12c0-1.381 1.119-2.5 2.5-2.5h1.5v5h-1.5c-1.381 0-2.5-1.119-2.5-2.5zm16.422-5.438A2.25 2.25 0 0121 8.5v7a2.25 2.25 0 01-2.328 1.938c-3.14-.382-6.529-1.38-9.172-2.938v-5c2.643-1.558 6.032-2.556 9.172-2.938zM8 17.5v2.25a2.25 2.25 0 002.25 2.25h.5a2.25 2.25 0 002.25-2.25v-4.591a25.86 25.86 0 01-5 1.591z"/>
+                    </svg>
+                    Comunicados Importantes
+                </h2>
+                <div id="alerts-list" class="alerts-list"></div>
+            </section>
+
+        </main>
+
+        <footer>
+            <p>IVR TV — Painel de Prazos Operacionais</p>
+            <p id="last-update" style="margin-top: 6px; font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Última atualização: Nunca</p>
+        </footer>
+
+        <button id="btn-quick-alert" class="fab-btn" title="Publicar Aviso Rápido">+</button>
+
+        <aside id="chat-sidebar" class="chat-sidebar">
+            <div class="chat-header">
+                <div class="chat-header-title">
+                    <span class="chat-header-icon">💬</span>
+                    <div>
+                        <h3>Chat da Equipe</h3>
+                        <span class="chat-subtitle">Converse com todos os usuários</span>
+                    </div>
+                </div>
+                <button id="btn-close-chat" class="btn-close-chat" title="Fechar chat" type="button">&times;</button>
+            </div>
+            <div id="chat-messages" class="chat-messages">
+                <p class="chat-empty">Nenhuma mensagem ainda. Seja o primeiro a dizer oi! 👋</p>
+            </div>
+            <form id="chat-form" class="chat-input-row">
+                <input type="text" id="chat-input" class="chat-input" placeholder="Digite sua mensagem..." maxlength="500" autocomplete="off">
+                <button type="submit" class="btn-chat-send" title="Enviar">➤</button>
+            </form>
+        </aside>
+
+        <button id="btn-toggle-chat" class="chat-fab-btn" title="Abrir Chat">
+            💬
+            <span id="chat-fab-badge" class="chat-fab-badge">0</span>
+        </button>
+    </div>
+
+    <!-- Modais do Sistema -->
+    <div id="quick-alert-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📢 Novo Aviso Rápido</h3>
+                <button id="btn-close-modal" class="btn-close-modal">&times;</button>
+            </div>
+            <form id="quick-alert-form" class="admin-form">
+                <div class="form-group">
+                    <label for="qa-title">Título do Aviso</label>
+                    <input type="text" id="qa-title" class="form-control" placeholder="Ex: Indisponibilidade de Sinal" required>
+                </div>
+                <div class="form-group">
+                    <label for="qa-text">Descrição Breve</label>
+                    <textarea id="qa-text" class="form-control" rows="3" placeholder="Qual o problema?" required style="resize: none;"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="qa-color">Prioridade</label>
+                        <select id="qa-color" class="form-control" required style="margin-bottom: 0;">
+                            <option value="green">🟢 Normal</option>
+                            <option value="yellow" selected>🟡 Alta</option>
+                            <option value="red">🔴 Crítica</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="qa-duration">Duração do Aviso</label>
+                        <select id="qa-duration" class="form-control" required style="margin-bottom: 0;">
+                            <option value="1">1 Hora</option>
+                            <option value="2">2 Horas</option>
+                            <option value="4" selected>4 Horas</option>
+                            <option value="8">8 Horas</option>
+                            <option value="12">12 Horas</option>
+                            <option value="24">24 Horas</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">Publicar Aviso</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="profile-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>👤 Meu Perfil</h3>
+                <button id="btn-close-profile" class="btn-close-modal">&times;</button>
+            </div>
+            <form id="profile-form" class="admin-form">
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <img id="profile-preview" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2362727d'><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/></svg>" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); margin-bottom: 10px; background-color: var(--bg-input);">
+                    <input type="file" id="profile-pic-input" accept="image/*" class="form-control" style="font-size: 0.75rem; padding: 6px; cursor: pointer;">
+                    <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: -10px;">A imagem será otimizada automaticamente.</p>
+                </div>
+                <div class="form-group">
+                    <label for="profile-username">Nome de Usuário (E-mail)</label>
+                    <input type="text" id="profile-username" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="profile-password">Nova Senha</label>
+                    <input type="password" id="profile-password" class="form-control" placeholder="Deixe em branco para manter a atual">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Salvar Alterações</button>
+            </form>
+        </div>
+    </div>
+
+
+</body>
+</html>
