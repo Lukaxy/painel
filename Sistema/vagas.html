@@ -3,20 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mural de aviso!</title>
+    <title>Painel de Vagas - Agendamento</title>
     <link rel="icon" href="img/IVR.png" type="image/x-icon">
     <link rel="stylesheet" href="css/vagas.css">
 </head>
+<body>
 
-<div id="app-view">
+    <div id="loader">⏳ Sincronizando com Banco...</div>
+
+    <div id="app-view">
         <main class="container">
-            
             <div class="header-banner-wrapper">
                 <header class="header-layout">
                     <div class="header-left">
-                        <img src="img/IVR.png" alt="Logo IVR" class="header-logo">
+                        <img src="img/IVR.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
                         <div class="subtitle">Agendamento de serviços</div>
-                        <h1>Painel de vagas</h1>
+                        <h1>Painel de Vagas</h1>
                     </div>
                     
                     <div class="header-right">
@@ -24,15 +26,758 @@
                             <div id="live-time" class="clock-time">00:00:00</div>
                             <div id="live-date" class="clock-date">Carregando data...</div>
                         </div>
-                        <div class="header-desc-text">
-                            Janela de atendimento vigente em cada praça,<br>atualizada pelo time de operações.
-                        </div>
                     </div>
                 </header>
 
                 <section class="top-bar">
-                    <div class="action-buttons">
-                        <button id="btn-logout" class="btn btn-danger-outline">🚪 Sair</button>                
+                    <div class="indicators">
+                        <div class="indicator-card">
+                            <span class="indicator-label">Total de Vagas (Mês)</span>
+                            <span class="indicator-value" id="ind-total">0</span>
+                        </div>
+                        <div class="indicator-card">
+                            <span class="indicator-label">Disponíveis</span>
+                            <span class="indicator-value status-green" id="ind-livres">0</span>
+                        </div>
+                        <div class="indicator-card">
+                            <span class="indicator-label">Ocupadas</span>
+                            <span class="indicator-value status-red" id="ind-ocupadas">0</span>
+                        </div>
+                        <div class="indicator-card">
+                            <span class="indicator-label">Taxa de Ocupação</span>
+                            <span class="indicator-value status-yellow" id="ind-taxa">0%</span>
+                        </div>
+                    </div>
+                    <div class="action-buttons" style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary" onclick="syncAllData()">🔄 Atualizar</button>
+                        <div id="admin-btn-container"></div>
+                        <button onclick="backpage()" class="btn btn-danger-outline">⬅ Voltar</button>        
                     </div>
                 </section>
             </div>
+
+            <div class="calendar-wrapper">
+                <div class="calendar-header">
+                    <h2 class="calendar-title" id="month-year-display">Mês Ano</h2>
+                    <div class="calendar-nav">
+                        <button onclick="changeMonth(-1)">◀ Anterior</button>
+                        <button onclick="changeMonth(0)">Hoje</button>
+                        <button onclick="changeMonth(1)">Próximo ▶</button>
+                    </div>
+                </div>
+
+                <div class="calendar-grid" id="calendar-days-header">
+                    <div class="calendar-day-header">Dom</div>
+                    <div class="calendar-day-header">Seg</div>
+                    <div class="calendar-day-header">Ter</div>
+                    <div class="calendar-day-header">Qua</div>
+                    <div class="calendar-day-header">Qui</div>
+                    <div class="calendar-day-header">Sex</div>
+                    <div class="calendar-day-header">Sáb</div>
+                </div>
+
+                <div class="calendar-grid" id="calendar-grid"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- OVERLAYS E MODAIS -->
+    <div class="overlay" id="main-overlay" onclick="closeAllPanels()"></div>
+
+    <div class="drawer" id="day-drawer">
+        <div class="drawer-header">
+            <div>
+                <h3 id="drawer-date-title">Data</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted);" id="drawer-stats-subtitle">0 vagas totais</p>
+            </div>
+            <button class="close-btn" onclick="closeAllPanels()">&times;</button>
+        </div>
+        <div class="drawer-body">
+            <div class="toolbar">
+                <div class="search-box">
+                    <input type="text" id="search-slot" class="form-control" placeholder="Pesquisar cliente ou serviço..." onkeyup="filterSlots()">
+                </div>
+                <select id="filter-slot" class="form-control" style="width: auto;" onchange="filterSlots()">
+                    <option value="all">Todas as vagas</option>
+                    <option value="available">Somente Livres</option>
+                    <option value="occupied">Somente Ocupadas</option>
+                </select>
+            </div>
+            <div id="slots-container"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="reservation-modal">
+        <div class="drawer-header">
+            <h3 id="res-modal-title">Reservar Vaga</h3>
+            <button class="close-btn" onclick="closeAllPanels()">&times;</button>
+        </div>
+        <div class="drawer-body">
+            <form id="reservation-form">
+                <input type="hidden" id="res-slot-id">
+                <div class="form-group">
+                    <label>Horário</label>
+                    <input type="text" id="res-time" class="form-control" readonly disabled>
+                </div>
+                <div class="form-group">
+                    <label>Cliente</label>
+                    <input type="text" id="res-client" class="form-control" placeholder="Nome do Cliente" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Serviço</label>
+                    <select id="res-service" class="form-control" required>
+                        <option value="">Selecione...</option>
+                        <option value="Instalação FTTH">Instalação FTTH</option>
+                        <option value="Manutenção">Manutenção</option>
+                        <option value="Mudança de Endereço">Mudança de Endereço</option>
+                        <option value="Troca de Roteador">Troca de Roteador</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Comentário</label>
+                    <textarea id="res-comment" class="form-control" placeholder='Ex: "Utilizando para cliente João Silva referente à instalação FTTH."'></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-danger-outline" id="btn-delete-res" style="display:none;" onclick="deleteReservation()">Cancelar Reserva</button>
+            <button class="btn btn-secondary" onclick="closeAllPanels()">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveReservation()">Salvar</button>
+        </div>
+    </div>
+
+    <div class="modal" id="admin-modal">
+        <div class="drawer-header">
+            <h3>Gerenciador de Vagas (Admin)</h3>
+            <button class="close-btn" onclick="closeAllPanels()">&times;</button>
+        </div>
+        <div class="drawer-body">
+            <form id="admin-form">
+                <div class="form-group">
+                    <label>Aplicar na Data</label>
+                    <input type="date" id="admin-date" class="form-control" required>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Hora Inicial</label>
+                        <input type="time" id="admin-start" class="form-control" value="08:00" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Hora Final</label>
+                        <input type="time" id="admin-end" class="form-control" value="18:00" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Intervalo (minutos)</label>
+                    <input type="number" id="admin-interval" class="form-control" value="60" min="15" step="15" required>
+                </div>
+                <div class="form-group">
+                    <label>Ações em Massa</label>
+                    <select id="admin-bulk" class="form-control">
+                        <option value="single">Somente na data selecionada</option>
+                        <option value="week">Segunda a Sexta (Mês atual)</option>
+                        <option value="month">Todo o mês atual</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeAllPanels()">Cancelar</button>
+            <button class="btn btn-primary" onclick="generateAdminSlots()">Gerar Vagas</button>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================================================
+           CONFIGURAÇÕES DO BANCO DE DADOS (TURSO)
+           ========================================================================== */
+        const TURSO_URL = "https://ivr-tv-sou-guz.aws-us-east-1.turso.io"; 
+        const TURSO_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODQwNTc0NzEsImlkIjoiMDE5ZjYyMTYtZmYwMS03NzNmLTg4ZTYtYTAzZjNmNmE4ODgzIiwia2lkIjoiVHE2QTB1MlV5WXFveExYUjBndy1PNjNIYUJ0d0N5STd1cGpUbWVDb1BhOCIsInJpZCI6IjU5YTFmMmVjLTFmMTItNDgzMi1hNWUzLWM0ZmUxOWZhNDkyZCJ9.boSgwpRGCUtW1T5YIIvLEQ5AB7ZET2i86W8BIR4Am_WDxIU97JB24c0z6fIA-oPHJAjCOoKAHJpqsFj5l4EdCg"; 
+
+        const currentUser = { id: 1, name: "Administrador", role: "admin" };
+
+        let db = { service_days: [], service_slots: [] };
+        let currentDate = new Date();
+        let selectedDateStr = null;
+
+        const formatDate = (date) => date.toISOString().split('T')[0];
+        const parseDate = (str) => new Date(str + 'T00:00:00');
+        const getMonthName = (monthIndex) => ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][monthIndex];
+
+        /* ==========================================================================
+           LÓGICA DE INTEGRAÇÃO COM TURSO (FETCH API)
+           ========================================================================== */
+        function showLoader(show) {
+            document.getElementById('loader').style.display = show ? 'block' : 'none';
+        }
+
+        async function tursoQuery(sql, args = []) {
+            if (!TURSO_URL || !TURSO_TOKEN) return [];
+            
+            try {
+                showLoader(true);
+                const response = await fetch(`${TURSO_URL}/v2/pipeline`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${TURSO_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        requests: [
+                            { type: "execute", stmt: { sql: sql, args: args } },
+                            { type: "close" }
+                        ]
+                    })
+                });
+                
+                const data = await response.json();
+
+                // Tratar erros do Turso explicitamente para não passarem em branco
+                if (data.results && data.results[0].type === "error") {
+                    console.error("Turso SQL Error:", data.results[0].error);
+                }
+                
+                if (data.results && data.results[0].type === "ok" && data.results[0].response.result) {
+                    const result = data.results[0].response.result;
+                    if (result.cols && result.rows) {
+                        const columns = result.cols.map(c => c.name);
+                        return result.rows.map(row => {
+                            let obj = {};
+                            row.forEach((val, i) => {
+                                let v = val ? val.value : null;
+                                if (val && val.type === 'integer') {
+                                    v = parseInt(v, 10);
+                                } else if (val && val.type === 'float') {
+                                    v = parseFloat(v);
+                                }
+                                obj[columns[i]] = v;
+                            });
+                            return obj;
+                        });
+                    }
+                    return []; 
+                }
+                return [];
+            } catch (error) {
+                console.error("Erro na consulta Turso:", error);
+                return [];
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        async function tursoBatchExecute(sqlsWithArgs) {
+            if (!TURSO_URL || !TURSO_TOKEN) return;
+            try {
+                showLoader(true);
+                const chunkSize = 50;
+                for (let i = 0; i < sqlsWithArgs.length; i += chunkSize) {
+                    const chunk = sqlsWithArgs.slice(i, i + chunkSize);
+                    const requests = chunk.map(item => ({ type: "execute", stmt: { sql: item.sql, args: item.args } }));
+                    requests.push({ type: "close" });
+
+                    const res = await fetch(`${TURSO_URL}/v2/pipeline`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${TURSO_TOKEN}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ requests })
+                    });
+                    
+                    const data = await res.json();
+                    data.results?.forEach(r => {
+                        if (r.type === "error") console.error("Batch Error:", r.error);
+                    });
+                }
+            } catch (e) {
+                console.error("Erro ao rodar query em lote:", e);
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        async function setupDatabase() {
+            if (!TURSO_URL || !TURSO_TOKEN) return;
+            showLoader(true);
+            try {
+                await tursoQuery(`
+                    CREATE TABLE IF NOT EXISTS service_days (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        date TEXT NOT NULL UNIQUE,
+                        total_slots INTEGER DEFAULT 0
+                    )
+                `);
+
+                await tursoQuery(`
+                    CREATE TABLE IF NOT EXISTS service_slots (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        day_id INTEGER NOT NULL,
+                        hour TEXT NOT NULL,
+                        status TEXT DEFAULT 'livre',
+                        client_name TEXT,
+                        service_type TEXT,
+                        comment TEXT,
+                        reserved_at TEXT,
+                        FOREIGN KEY (day_id) REFERENCES service_days(id) ON DELETE CASCADE
+                    )
+                `);
+            } catch (e) {
+                console.error("Erro ao configurar tabelas:", e);
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        async function syncAllData() {
+            if (!TURSO_URL) {
+                console.warn("Turso não configurado.");
+                return;
+            }
+
+            const todayStr = formatDate(new Date());
+            await tursoQuery(`DELETE FROM service_days WHERE date < ?`, [{type: "text", value: todayStr}]);
+
+            db.service_days = await tursoQuery("SELECT * FROM service_days");
+            db.service_slots = await tursoQuery("SELECT * FROM service_slots");
+            
+            renderCalendar();
+            
+            if (document.getElementById('day-drawer').classList.contains('active')) {
+                renderSlotsList();
+            }
+        } 
+        //botão voltar
+
+        function backpage() {
+        window.location.href = 'index.html'; 
+        }
+
+
+        /* ==========================================================================
+           INICIALIZAÇÃO E UI GERAL
+           ========================================================================== */
+        async function init() {
+            startClock();
+            setupAdminPanel();
+            await setupDatabase();
+            await syncAllData();
+        }
+
+        function startClock() {
+            const timeEl = document.getElementById('live-time');
+            const dateEl = document.getElementById('live-date');
+            setInterval(() => {
+                const now = new Date();
+                timeEl.textContent = now.toLocaleTimeString('pt-BR', { hour12: false });
+                dateEl.textContent = now.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            }, 1000);
+        }
+
+        function setupAdminPanel() {
+            if (currentUser.role === "admin") {
+                const container = document.getElementById('admin-btn-container');
+                container.innerHTML = `<button class="btn btn-primary" onclick="openAdminModal()" style="background: var(--status-purple);">⚙️ Gerenciar Vagas</button>`;
+            }
+        }
+
+        function changeMonth(offset) {
+            if (offset === 0) { currentDate = new Date(); } 
+            else { currentDate.setMonth(currentDate.getMonth() + offset); }
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            document.getElementById('month-year-display').textContent = `${getMonthName(month)} ${year}`;
+            
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const lastDay = new Date(year, month + 1, 0).getDate();
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+
+            const todayStr = formatDate(new Date());
+            let monthTotal = 0, monthOccupied = 0, monthFree = 0;
+
+            for (let i = 0; i < firstDayIndex; i++) {
+                const emptyCard = document.createElement('div');
+                emptyCard.className = 'calendar-card empty';
+                grid.appendChild(emptyCard);
+            }
+
+            for (let day = 1; day <= lastDay; day++) {
+                const dateObj = new Date(year, month, day);
+                const dateStr = formatDate(dateObj);
+                const dayOfWeek = dateObj.getDay();
+                const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                const isToday = (dateStr === todayStr);
+                const isPast = (dateStr < todayStr); 
+
+                const dayData = db.service_days.find(d => d.date === dateStr);
+                const slots = dayData ? db.service_slots.filter(s => s.day_id === dayData.id) : [];
+                
+                // CORREÇÃO: Total calculado pelas vagas exatas que foram puxadas do DB e não pela coluna instável
+                let total = slots.length;
+                let occupied = slots.filter(s => s.status === 'ocupada').length;
+                let free = total - occupied;
+                
+                monthTotal += total;
+                monthOccupied += occupied;
+                monthFree += free;
+
+                let statusColor = 'var(--text-muted)';
+                let statusText = 'SEM VAGAS';
+                let progressW = 0;
+                let progressClass = '';
+
+                if (isPast) {
+                    statusColor = 'var(--text-muted)'; statusText = 'ENCERRADO'; occupied = 0; total = 0;
+                } else if (total > 0) {
+                    const percentFree = (free / total) * 100;
+                    progressW = (occupied / total) * 100;
+
+                    if (free === 0) {
+                        statusColor = 'var(--status-red)'; statusText = 'LOTADO'; progressClass = 'bg-red';
+                    } else if (percentFree <= 20) {
+                        statusColor = 'var(--status-orange)'; statusText = `${free} LIVRES`; progressClass = 'bg-orange';
+                    } else if (percentFree <= 50) {
+                        statusColor = 'var(--status-yellow)'; statusText = `${free} LIVRES`; progressClass = 'bg-yellow';
+                    } else {
+                        statusColor = 'var(--status-green)'; statusText = `${free} LIVRES`; progressClass = 'bg-green';
+                    }
+                }
+
+                const card = document.createElement('div');
+                card.className = `calendar-card ${isWeekend ? 'weekend' : ''} ${isToday ? 'today' : ''} ${isPast ? 'past' : ''}`;
+                
+                if (!isPast) card.onclick = () => openDayDrawer(dateStr);
+
+                card.innerHTML = `
+                    <div class="day-number" style="color: ${isToday ? 'var(--primary-light)' : 'inherit'}">${day}</div>
+                    <div class="day-stats">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>${occupied}/${total}</span>
+                            <span class="day-status-text" style="color: ${statusColor}">${statusText}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill ${progressClass}" style="width: ${progressW}%"></div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            }
+
+            // CORREÇÃO: Atualiza os indicadores de forma fluida baseada no laço exato dos dados
+            document.getElementById('ind-total').textContent = monthTotal;
+            document.getElementById('ind-livres').textContent = monthFree;
+            document.getElementById('ind-ocupadas').textContent = monthOccupied;
+            
+            const rate = monthTotal === 0 ? 0 : Math.round((monthOccupied / monthTotal) * 100);
+            const indTaxa = document.getElementById('ind-taxa');
+            indTaxa.textContent = `${rate}%`;
+            indTaxa.className = `indicator-value ${rate >= 80 ? 'status-red' : (rate >= 50 ? 'status-yellow' : 'status-green')}`;
+        }
+
+        /* ==========================================================================
+           DRAWER E RESERVA
+           ========================================================================== */
+        function openDayDrawer(dateStr) {
+            selectedDateStr = dateStr;
+            const dateObj = parseDate(dateStr);
+            document.getElementById('drawer-date-title').textContent = dateObj.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+            renderSlotsList();
+            document.getElementById('main-overlay').classList.add('active');
+            document.getElementById('day-drawer').classList.add('active');
+        }
+
+        function renderSlotsList() {
+            const container = document.getElementById('slots-container');
+            container.innerHTML = '';
+            document.getElementById('search-slot').value = '';
+            document.getElementById('filter-slot').value = 'all';
+
+            const dayData = db.service_days.find(d => d.date === selectedDateStr);
+            if (!dayData) {
+                container.innerHTML = '<p style="color: var(--text-muted); text-align: center; margin-top: 20px;">Nenhuma vaga configurada para este dia.</p>';
+                document.getElementById('drawer-stats-subtitle').textContent = '0 vagas totais';
+                return;
+            }
+
+            let slots = db.service_slots.filter(s => s.day_id === dayData.id);
+            slots.sort((a, b) => a.hour.localeCompare(b.hour));
+
+            const ocupadas = slots.filter(s => s.status === 'ocupada').length;
+            document.getElementById('drawer-stats-subtitle').textContent = `${slots.length} vagas totais | ${slots.length - ocupadas} livres | ${ocupadas} ocupadas`;
+
+            slots.forEach(slot => {
+                const item = document.createElement('div');
+                item.className = `slot-item ${slot.status === 'livre' ? 'available' : 'occupied'}`;
+                item.setAttribute('data-status', slot.status);
+                item.setAttribute('data-search', `${slot.client_name || ''} ${slot.service_type || ''}`.toLowerCase());
+                
+                item.onclick = () => openReservationModal(slot.id);
+
+                let btnDeleteHtml = '';
+                if (currentUser.role === 'admin') {
+                    btnDeleteHtml = `<button class="btn-icon" onclick="event.stopPropagation(); deleteSlotEntirely(${slot.id})" title="Apagar vaga do sistema">🗑️</button>`;
+                }
+
+                if (slot.status === 'livre') {
+                    item.innerHTML = `
+                        <div style="display: flex; align-items: center; flex: 1;">
+                            <div class="slot-time">${slot.hour}</div>
+                            <div class="slot-info"><div class="slot-client" style="color: var(--status-green);">Disponível</div></div>
+                        </div> ${btnDeleteHtml}
+                    `;
+                } else {
+                    item.innerHTML = `
+                        <div style="display: flex; align-items: center; flex: 1;">
+                            <div class="slot-time">${slot.hour}</div>
+                            <div class="slot-info">
+                                <div class="slot-client">${slot.client_name}</div>
+                                <div class="slot-service">${slot.service_type}</div>
+                            </div>
+                        </div> ${btnDeleteHtml}
+                    `;
+                }
+                container.appendChild(item);
+            });
+        }
+
+        function filterSlots() {
+            const searchTerm = document.getElementById('search-slot').value.toLowerCase();
+            const filterStatus = document.getElementById('filter-slot').value;
+            const items = document.querySelectorAll('.slot-item');
+            items.forEach(item => {
+                const status = item.getAttribute('data-status');
+                const searchStr = item.getAttribute('data-search');
+                const matchStatus = filterStatus === 'all' || (filterStatus === 'available' && status === 'livre') || (filterStatus === 'occupied' && status === 'ocupada');
+                const matchSearch = searchStr.includes(searchTerm);
+                item.style.display = (matchStatus && matchSearch) ? 'flex' : 'none';
+            });
+        }
+
+        function openReservationModal(slotId) {
+            const slot = db.service_slots.find(s => s.id === slotId);
+            if (!slot) return;
+
+            document.getElementById('res-slot-id').value = slot.id;
+            document.getElementById('res-time').value = slot.hour;
+            
+            const title = document.getElementById('res-modal-title');
+            const btnDeleteRes = document.getElementById('btn-delete-res');
+
+            if (slot.status === 'livre') {
+                title.textContent = 'Reservar Vaga';
+                document.getElementById('res-client').value = '';
+                document.getElementById('res-service').value = '';
+                document.getElementById('res-comment').value = '';
+                btnDeleteRes.style.display = 'none';
+            } else {
+                title.textContent = 'Editar Reserva';
+                document.getElementById('res-client').value = slot.client_name;
+                document.getElementById('res-service').value = slot.service_type;
+                document.getElementById('res-comment').value = slot.comment;
+                btnDeleteRes.style.display = 'inline-flex';
+            }
+
+            document.getElementById('day-drawer').classList.remove('active');
+            document.getElementById('reservation-modal').classList.add('active');
+        }
+
+        async function saveReservation() {
+            const slotId = parseInt(document.getElementById('res-slot-id').value);
+            const client = document.getElementById('res-client').value.trim();
+            const service = document.getElementById('res-service').value;
+            const comment = document.getElementById('res-comment').value.trim();
+
+            if (!client || !service) { alert("Preencha o Cliente e o Tipo de Serviço."); return; }
+
+            // CORREÇÃO: O Turso só aceita números passados como STRING nos requests via HTTP. Se mandar nativo, ele falha.
+            await tursoQuery(`
+                UPDATE service_slots 
+                SET status = 'ocupada', client_name = ?, service_type = ?, comment = ?, reserved_at = datetime('now') 
+                WHERE id = ?`, 
+                [
+                    {type: "text", value: client}, 
+                    {type: "text", value: service}, 
+                    {type: "text", value: comment}, 
+                    {type: "integer", value: slotId.toString()} 
+                ]
+            );
+
+            await syncAllData();
+            closeModalAndReturnToDrawer();
+        }
+
+        async function deleteReservation() {
+            if(!confirm("Tem certeza que deseja cancelar esta reserva? A vaga voltará a ficar livre.")) return;
+
+            const slotId = parseInt(document.getElementById('res-slot-id').value);
+            
+            // CORREÇÃO: .toString() obrigatório
+            await tursoQuery(`
+                UPDATE service_slots 
+                SET status = 'livre', client_name = NULL, service_type = NULL, comment = NULL, reserved_at = NULL 
+                WHERE id = ?`, 
+                [{type: "integer", value: slotId.toString()}]
+            );
+
+            await syncAllData();
+            closeModalAndReturnToDrawer();
+        }
+
+        async function deleteSlotEntirely(slotId) {
+            if(!confirm("⚠️ ATENÇÃO: Deseja realmente APAGAR ESTA VAGA do sistema de forma permanente?")) return;
+
+            const slot = db.service_slots.find(s => s.id === slotId);
+            if(!slot) return;
+            const dayId = slot.day_id;
+
+            // CORREÇÃO: .toString() obrigatório
+            await tursoQuery(`DELETE FROM service_slots WHERE id = ?`, [{type: "integer", value: slotId.toString()}]);
+            await tursoQuery(`UPDATE service_days SET total_slots = total_slots - 1 WHERE id = ?`, [{type: "integer", value: dayId.toString()}]);
+
+            await syncAllData();
+        }
+
+        function closeModalAndReturnToDrawer() {
+            document.getElementById('reservation-modal').classList.remove('active');
+            document.getElementById('day-drawer').classList.add('active');
+        }
+
+        function closeAllPanels() {
+            document.getElementById('main-overlay').classList.remove('active');
+            document.getElementById('day-drawer').classList.remove('active');
+            document.getElementById('reservation-modal').classList.remove('active');
+            document.getElementById('admin-modal').classList.remove('active');
+        }
+
+        /* ==========================================================================
+           ADMIN GERADOR DE VAGAS OTIMIZADO
+           ========================================================================== */
+        function openAdminModal() {
+            document.getElementById('admin-date').value = formatDate(currentDate);
+            document.getElementById('main-overlay').classList.add('active');
+            document.getElementById('admin-modal').classList.add('active');
+        }
+
+        async function generateAdminSlots() {
+            const dateVal = document.getElementById('admin-date').value;
+            const startVal = document.getElementById('admin-start').value;
+            const endVal = document.getElementById('admin-end').value;
+            const intervalVal = parseInt(document.getElementById('admin-interval').value);
+            const bulkVal = document.getElementById('admin-bulk').value;
+
+            if (!dateVal || !startVal || !endVal || !intervalVal || intervalVal <= 0) { 
+                alert("Preencha todos os campos do gerador corretamente."); 
+                return; 
+            }
+
+            const datesToProcess = [];
+            const baseDate = parseDate(dateVal);
+
+            if (bulkVal === 'single') { datesToProcess.push(dateVal); } 
+            else if (bulkVal === 'week') {
+                const year = baseDate.getFullYear(); const month = baseDate.getMonth();
+                const lastDay = new Date(year, month + 1, 0).getDate();
+                for(let d=1; d<=lastDay; d++) {
+                    const dt = new Date(year, month, d); const dayWeek = dt.getDay();
+                    if(dayWeek > 0 && dayWeek < 6) datesToProcess.push(formatDate(dt));
+                }
+            } else if (bulkVal === 'month') {
+                const year = baseDate.getFullYear(); const month = baseDate.getMonth();
+                const lastDay = new Date(year, month + 1, 0).getDate();
+                for(let d=1; d<=lastDay; d++) { datesToProcess.push(formatDate(new Date(year, month, d))); }
+            }
+
+            const timeSlots = [];
+            let [sH, sM] = startVal.split(':').map(Number);
+            let [eH, eM] = endVal.split(':').map(Number);
+            let currentMins = sH * 60 + sM; const endMins = eH * 60 + eM;
+
+            while (currentMins < endMins) {
+                const h = Math.floor(currentMins / 60).toString().padStart(2, '0');
+                const m = (currentMins % 60).toString().padStart(2, '0');
+                timeSlots.push(`${h}:${m}`);
+                currentMins += intervalVal;
+            }
+
+            showLoader(true);
+            try {
+                const batchStmts = [];
+                
+                for (let dStr of datesToProcess) {
+                    await tursoQuery(`INSERT OR IGNORE INTO service_days (date, total_slots) VALUES (?, 0)`, [{type: "text", value: dStr}]);
+                    
+                    const dayObjResp = await tursoQuery(`SELECT id FROM service_days WHERE date = ?`, [{type: "text", value: dStr}]);
+                    if (dayObjResp.length === 0) continue;
+                    const dayId = dayObjResp[0].id;
+
+                    // CORREÇÃO: .toString()
+                    const existingSlots = await tursoQuery(`SELECT hour FROM service_slots WHERE day_id = ?`, [{type: "integer", value: dayId.toString()}]);
+                    const existingHours = existingSlots.map(s => s.hour);
+
+                    let added = 0;
+                    for (let timeStr of timeSlots) {
+                        if (!existingHours.includes(timeStr)) {
+                            batchStmts.push({
+                                sql: `INSERT INTO service_slots (day_id, hour, status) VALUES (?, ?, 'livre')`,
+                                // CORREÇÃO: .toString()
+                                args: [{type: "integer", value: dayId.toString()}, {type: "text", value: timeStr}]
+                            });
+                            added++;
+                        }
+                    }
+
+                    if (added > 0) {
+                        batchStmts.push({
+                            sql: `UPDATE service_days SET total_slots = total_slots + ? WHERE id = ?`,
+                            // CORREÇÃO: .toString()
+                            args: [{type: "integer", value: added.toString()}, {type: "integer", value: dayId.toString()}]
+                        });
+                    }
+                }
+                
+                if (batchStmts.length > 0) {
+                    await tursoBatchExecute(batchStmts);
+                }
+                
+                alert("Vagas geradas com sucesso!");
+                closeAllPanels();
+                await syncAllData();
+
+            } catch(e) {
+                console.error("Erro ao gerar vagas:", e);
+                alert("Erro ao gerar as vagas no banco de dados.");
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        /* ==========================================================================
+           EXPORTAÇÃO
+           ========================================================================== */
+        function exportToCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Data,Horario,Status,Cliente,Servico,Comentario\n";
+            db.service_slots.forEach(slot => {
+                const day = db.service_days.find(d => d.id === slot.day_id);
+                if(day) {
+                    const row = [day.date, slot.hour, slot.status, slot.client_name || '', slot.service_type || '', slot.comment || ''].map(e => `"${e}"`).join(",");
+                    csvContent += row + "\n";
+                }
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `agenda_vagas_${formatDate(new Date())}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
