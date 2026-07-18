@@ -1,0 +1,148 @@
+
+        /* ==========================================================================
+           VARIÁVEIS E ESTILOS GLOBAIS
+           ========================================================================== */
+        :root {
+            --bg-main: #09090b; 
+            --text-main: #f4f4f5; 
+            --text-muted: #a1a1aa; 
+            --bg-topbar: #121214;
+            --bg-input: #18181b;
+            --border-input: rgba(255, 255, 255, 0.08);
+            
+            --bg-card: #0d0d0f; 
+            --border-card: #27272a; 
+            --text-light: #ffffff;
+            
+            --status-purple: #a855f7; 
+            --status-green: #10b981;  
+            --status-yellow: #eab308; 
+            --status-orange: #f97316; 
+            --status-red: #dc2626;    
+            
+            --primary: #9333ea;
+            --primary-hover: #a855f7;
+            --primary-light: #c084fc;
+            
+            --border-radius: 12px;
+            --transition-smooth: all 0.25s ease;
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+            --shadow-lg: 0 10px 30px rgba(0,0,0,0.6);
+
+            --glass-bg: rgba(13, 13, 15, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.05);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; -webkit-font-smoothing: antialiased; }
+        body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+
+        /* ==========================================================================
+           HEADER E BANNER
+           ========================================================================== */
+        .container { padding: 20px; max-width: 1600px; margin: 0 auto; width: 100%; }
+        .header-banner-wrapper {
+            background-color: #0b0213;
+            background-image: radial-gradient(circle at 100% 0%, rgba(147, 51, 234, 0.2) 0%, transparent 45%), radial-gradient(circle at 0% 100%, rgba(147, 51, 234, 0.15) 0%, transparent 45%), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+            border-radius: 16px; padding: 24px 30px; margin-bottom: 24px; box-shadow: var(--shadow-lg); border: 1px solid rgba(147, 51, 234, 0.15); position: relative;
+        }
+        .header-layout { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+        .header-left { display: flex; flex-direction: column; gap: 4px; }
+        .header-left .subtitle { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: #d8b4fe; font-weight: 700; }
+        .header-left h1 { font-size: 2.2rem; color: #ffffff; font-weight: 800; letter-spacing: -0.5px; line-height: 1.2; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .header-logo { max-width: 150px; margin-bottom: 10px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+        
+        .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+        .clock-container { background-color: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.05); padding: 12px 24px; border-radius: 12px; text-align: right; min-width: 220px; backdrop-filter: blur(10px); }
+        .clock-time { font-family: 'Courier New', Courier, monospace; font-size: 1.6rem; font-weight: 700; color: #ffffff; letter-spacing: 2px; }
+        .clock-date { font-size: 0.75rem; color: #a1a1aa; font-weight: 600; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.5px; }
+        
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; }
+        .indicators { display: flex; gap: 15px; flex-wrap: wrap; }
+        .indicator-card { background: var(--glass-bg); backdrop-filter: blur(8px); border: 1px solid var(--glass-border); padding: 10px 20px; border-radius: 8px; display: flex; flex-direction: column; }
+        .indicator-value { font-size: 1.2rem; font-weight: bold; color: var(--text-light); }
+        .indicator-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+
+        .btn { padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: var(--transition-smooth); border: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); color: white; }
+        .btn-danger-outline { background: transparent; border: 1px solid var(--status-red); color: var(--status-red); }
+        .btn-danger-outline:hover { background: var(--status-red); color: white; }
+        .btn-primary { background: var(--primary); }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-secondary { background: var(--bg-card); border: 1px solid var(--border-card); }
+        .btn-secondary:hover { background: #1f1f22; }
+        .btn-icon { background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; padding: 6px; transition: 0.2s; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+        .btn-icon:hover { color: var(--status-red); background: rgba(239, 68, 68, 0.15); }
+
+        /* ==========================================================================
+           CALENDÁRIO MENSAL
+           ========================================================================== */
+        .calendar-wrapper { background: var(--glass-bg); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: var(--border-radius); padding: 24px; box-shadow: var(--shadow-md); }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .calendar-title { font-size: 1.5rem; font-weight: bold; color: var(--primary-light); text-transform: capitalize; }
+        .calendar-nav { display: flex; gap: 10px; }
+        .calendar-nav button { background: var(--bg-card); border: 1px solid var(--border-card); color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .calendar-nav button:hover { background: var(--primary); border-color: var(--primary); }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; }
+        .calendar-day-header { text-align: center; font-weight: bold; color: var(--text-muted); padding-bottom: 10px; font-size: 0.85rem; text-transform: uppercase; }
+
+        .calendar-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 10px; min-height: 110px; padding: 12px; display: flex; flex-direction: column; cursor: pointer; transition: var(--transition-smooth); position: relative; overflow: hidden; }
+        .calendar-card:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.5); border-color: var(--primary); }
+        .calendar-card.empty { background: transparent; border: none; cursor: default; box-shadow: none; }
+        .calendar-card.empty:hover { transform: none; }
+        .calendar-card.today { border: 1px solid var(--primary-light); }
+        .calendar-card.weekend { background: #121215; }
+        .calendar-card.past { opacity: 0.35; cursor: not-allowed; filter: grayscale(100%); }
+        .calendar-card.past:hover { transform: none; box-shadow: none; border-color: var(--border-card); }
+
+        .day-number { font-size: 1.2rem; font-weight: bold; margin-bottom: 8px; }
+        .day-stats { margin-top: auto; font-size: 0.8rem; display: flex; flex-direction: column; gap: 4px; }
+        .day-status-text { font-weight: bold; font-size: 0.75rem; text-align: right; }
+
+        .progress-bar { width: 100%; background: #27272a; height: 6px; border-radius: 3px; overflow: hidden; margin: 5px 0; }
+        .progress-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease; }
+
+        .status-green { color: var(--status-green); } .bg-green { background-color: var(--status-green); }
+        .status-yellow { color: var(--status-yellow); } .bg-yellow { background-color: var(--status-yellow); }
+        .status-orange { color: var(--status-orange); } .bg-orange { background-color: var(--status-orange); }
+        .status-red { color: var(--status-red); } .bg-red { background-color: var(--status-red); }
+
+        /* ==========================================================================
+           MODAIS E DRAWERS
+           ========================================================================== */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 100; opacity: 0; visibility: hidden; transition: var(--transition-smooth); }
+        .overlay.active { opacity: 1; visibility: visible; }
+
+        .drawer { position: fixed; top: 0; right: -500px; width: 100%; max-width: 450px; height: 100%; background: var(--bg-main); border-left: 1px solid var(--border-card); z-index: 101; transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; box-shadow: -5px 0 25px rgba(0,0,0,0.7); }
+        .drawer.active { right: 0; }
+        .drawer-header { padding: 20px; border-bottom: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; background: var(--bg-topbar); }
+        .drawer-body { padding: 20px; overflow-y: auto; flex: 1; }
+        .close-btn { background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; transition: 0.2s; }
+        .close-btn:hover { color: var(--status-red); }
+
+        .slot-item { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; transition: var(--transition-smooth); cursor: pointer; }
+        .slot-item:hover { border-color: var(--primary); transform: translateX(5px); }
+        .slot-item.occupied { border-left: 4px solid var(--status-red); }
+        .slot-item.available { border-left: 4px solid var(--status-green); }
+
+        .slot-time { font-size: 1.2rem; font-weight: bold; color: var(--text-light); }
+        .slot-info { flex: 1; margin-left: 15px; }
+        .slot-client { font-weight: bold; color: #fff; }
+        .slot-service { font-size: 0.8rem; color: var(--text-muted); }
+
+        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9); background: var(--bg-main); border: 1px solid var(--border-card); border-radius: var(--border-radius); width: 100%; max-width: 500px; z-index: 102; opacity: 0; visibility: hidden; transition: var(--transition-smooth); box-shadow: var(--shadow-lg); }
+        .modal.active { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 0.85rem; color: var(--text-muted); }
+        .form-control { width: 100%; background: var(--bg-input); border: 1px solid var(--border-input); color: var(--text-main); padding: 10px 15px; border-radius: 6px; font-size: 0.95rem; transition: 0.2s; }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.2); }
+        textarea.form-control { resize: vertical; min-height: 80px; }
+
+        .modal-footer { padding: 20px; border-top: 1px solid var(--border-card); display: flex; justify-content: flex-end; gap: 10px; background: var(--bg-topbar); border-radius: 0 0 12px 12px;}
+
+        .toolbar { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .search-box { flex: 1; min-width: 200px; position: relative; }
+        
+        @media print { .top-bar, .calendar-nav, .toolbar, #btn-logout, #admin-btn-container { display: none !important; } body { background: white; color: black; } .calendar-card { border: 1px solid #ccc; page-break-inside: avoid; } .progress-bar { border: 1px solid #ccc; } }
+        
+        /* Spinner Loader */
+        #loader { display: none; position: fixed; top: 20px; right: 20px; z-index: 9999; background: var(--primary); padding: 10px 20px; border-radius: 8px; box-shadow: var(--shadow-md); color: white; font-weight: bold; }
